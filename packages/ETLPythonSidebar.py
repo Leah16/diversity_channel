@@ -1,11 +1,13 @@
+import os
 import streamlit as st
 
 def ETLsidebar():
     with st.sidebar:
         # Home
         st.page_link("webMain.py", label="Home", icon="🏠")
+        st.page_link("pages/chatbot.py", label="Chatbot", icon="💬")
         # Tabs
-        education_tabs, healthCare_tabs, travelInfo_tabs = st.tabs(["Education", "Healthcare", "Travel"])
+        education_tabs, healthCare_tabs, travelInfo_tabs, misc_tabs = st.tabs(["Education", "Healthcare", "Travel", "Misc"])
 
         # Footer
         st.divider()
@@ -18,7 +20,20 @@ def ETLsidebar():
         </div>"""
         st.markdown(footer_html, unsafe_allow_html=True)
 
+
     with education_tabs:
-        
-        st.page_link("pages/example_one.py", label="First page", icon="🔥")
-        st.page_link("pages/example_two.py", label="Second page", icon="🔥")
+        create_page_link("The_education_system_in_Japan")
+        create_page_link("example")
+    with healthCare_tabs:
+        create_page_link("How_To_Get_Medicial_Care")
+        create_page_link("example")
+    with travelInfo_tabs:
+        create_page_link("example")
+    with misc_tabs:
+        create_page_link("example")
+
+def create_page_link(fileName):
+    file_path = f"pages/{fileName}.py"
+    label = fileName.replace("_", " ").title()
+    st.page_link(file_path, label=label, icon="🔥")
+    
