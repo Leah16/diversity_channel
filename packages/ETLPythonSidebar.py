@@ -3,14 +3,23 @@ import streamlit as st
 
 def ETLsidebar():
     with st.sidebar:
-        # Home
+        
+        
+        # 主导航 - 添加样式
         st.page_link("webMain.py", label="Home", icon="🏠")
         st.page_link("pages/chatbot.py", label="Chatbot", icon="💬")
-        # Tabs
-        education_tabs, healthCare_tabs, travelInfo_tabs, misc_tabs = st.tabs(["Education", "Healthcare", "Travel", "Misc"])
+        st.page_link("pages/rag.py", label="Knowledge Base", icon="📚")
+        
+        # Tabs - 使用更醒目的样式
+        education_tabs, healthCare_tabs, travelInfo_tabs, misc_tabs = st.tabs([
+            "📚 Education",
+            "🏥 Healthcare",
+            "✈️ Travel",
+            "📌 Misc"
+        ])
 
         # Footer
-        st.divider()
+        st.divider
         footer_html = """<div style='text-align: center;'>
         <p>ETL, Sophia University</p>
         </div>"""
@@ -19,7 +28,6 @@ def ETLsidebar():
         <p>Diversity Channel Project, 2024</p>
         </div>"""
         st.markdown(footer_html, unsafe_allow_html=True)
-
 
     with education_tabs:
         create_page_link("The_education_system_in_Japan")

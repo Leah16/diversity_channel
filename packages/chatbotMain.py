@@ -25,7 +25,14 @@ def chatbotMain():
     # 定义与Ollama通信的函数
     def query_ollama(prompt: str, model: str = "llama2"):
         try:
-            full_prompt = f"{SYSTEM_PROMPT}\n\n{CHARACTER_PROMPT}\n\nUser: {prompt}\nAssistant:"
+            # 获取相关上下文（如果RAG模块已初始化）
+            context = ""
+            if "rag_module" in st.session_state and st.session_state.rag_module.vector_store:
+                context = st.session_state.rag_module.get_relevant_context(prompt)
+            
+            # 将上下文添加到提示中（如果有）
+            context_prompt = f"\nRelevant context:\n{context}\n\n" if context else "\n"
+            full_prompt = f"{SYSTEM_PROMPT}\n\n{CHARACTER_PROMPT}{context_prompt}User: {prompt}\nAssistant:"
             
             response = requests.post(
                 "http://localhost:11434/api/generate",
