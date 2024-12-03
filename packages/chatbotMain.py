@@ -1,95 +1,100 @@
-import streamlit as st
-import requests
-import json
-import ollama
-from typing import List, Dict
+import streamlit as st  # 导入Streamlit库用于创建Web界面
+from typing import List, Dict  # 导入类型提示
+from packages.chatbotengine import ChatbotEngine  # 导入自定义的聊天引擎模块
+from packages.ttsengine import TTSEngine  # 导入TTS引擎
+import os
 
 def chatbotMain():
+    # 初始化TTS引擎
+    if "tts_engine" not in st.session_state:
+        st.session_state.tts_engine = TTSEngine()
     
-    # 初始化会话状态
+    # 如果聊天引擎不存在，创建一个新的实例
+    if "chat_engine" not in st.session_state:
+        st.session_state.chat_engine = ChatbotEngine()
+    
+    # 初始化消息历史列表
     if "messages" not in st.session_state:
         st.session_state.messages = []
     
-    # 定义系统提示词和角色提示词
-    SYSTEM_PROMPT = """I want you to act as a patient and guiding mentor who helps users through their questions. You must only respond in English. Your responses should be conversational and flow naturally like human typing, avoiding markdown formatting or numbered/bulleted lists. Write in a continuous, paragraph-style format as if you're having a natural conversation. Important: Only answer questions related to Japan and Japanese life. For any other topics, politely decline to answer and remind the user that you can only help with Japan-related questions."""
-    
-    CHARACTER_PROMPT = """You are Sakura Tanaka, a 21-year-old Japanese university student studying International Relations at Waseda University in Tokyo. You've lived in Tokyo your whole life but have also traveled extensively throughout Japan. You're friendly, enthusiastic, and always eager to help others understand Japanese culture, lifestyle, and customs. You have extensive knowledge about:
-    - Daily life in Japan (transportation, shopping, housing)
-    - Japanese education system and student life
-    - Japanese customs, traditions, and etiquette
-    - Popular culture, entertainment, and trends
-    - Local food and dining customs
-    - Tourist spots and travel tips
-    You speak English fluently but occasionally use simple Japanese expressions naturally in your conversation. You're cheerful and helpful, but also respectful and polite in a way that reflects Japanese cultural values."""
-    
-    # 定义与Ollama通信的函数
-    def query_ollama(prompt: str, model: str = "llama2"):
-        try:
-            # 获取相关上下文（如果RAG模块已初始化）
-            context = ""
-            if "rag_module" in st.session_state and st.session_state.rag_module.vector_store:
-                context = st.session_state.rag_module.get_relevant_context(prompt)
-            
-            # 将上下文添加到提示中（如果有）
-            context_prompt = f"\nRelevant context:\n{context}\n\n" if context else "\n"
-            full_prompt = f"{SYSTEM_PROMPT}\n\n{CHARACTER_PROMPT}{context_prompt}User: {prompt}\nAssistant:"
-            
-            response = requests.post(
-                "http://localhost:11434/api/generate",
-                json={
-                    "model": model,
-                    "prompt": full_prompt,
-                    "stream": True
-                },
-                stream=True
-            )
-            response.raise_for_status()
-            
-            # 逐字符产生响应
-            for chunk in response.iter_lines():
-                if chunk:
-                    json_response = json.loads(chunk.decode('utf-8'))
-                    if 'response' in json_response:
-                        yield json_response['response']
-                        
-        except requests.exceptions.RequestException as e:
-            st.error(f"Error communicating with Ollama: {str(e)}")
-            yield ""
-
-    # 模型选择
-    available_models = [model["name"] for model in ollama.list()["models"]]
+    # 创建模型选择下拉框
+    available_models = ChatbotEngine.get_available_models()
     selected_model = st.selectbox("Select a model", available_models)
     
-    # 显示聊天历史
+    # 遍历并显示所有历史消息
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # 用户输入
+    # 创建用户输入框并处理输入
     if prompt := st.chat_input("Your question"):
+        
+        # 如果有新对话，清除之前的音频
+        if "last_audio" in st.session_state:
+            del st.session_state.last_audio
+        
+        # 初始化RAG上下文
+        context = ""
+        if "rag_module" in st.session_state and st.session_state.rag_module.vector_store:
+            context = st.session_state.rag_module.get_context(prompt)
+            
+        # 将用户输入添加到消息历史
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
             
+        # 处理助手响应
         with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
+            message_placeholder = st.empty()  # 创建占位符用于流式显示
+            full_response = ""  # 存储完整响应
             
-            # 逐字符显示响应
-            for response_chunk in query_ollama(prompt, selected_model):
+            # 流式接收并显示AI响应
+            for response_chunk in st.session_state.chat_engine.query_ollama(
+                prompt, 
+                selected_model,
+                context=context if "rag_module" in st.session_state and st.session_state.rag_module.vector_store else ""
+            ):
                 full_response += response_chunk
-                # 使用st.write而不是markdown可能会有更好的实时性能
-                message_placeholder.write(full_response + "▌")
-                
-            message_placeholder.write(full_response)
+                message_placeholder.write(full_response + "▌")  # 显示打字效果
             
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+            message_placeholder.write(full_response)  # 显示最终完整响应
+            
+            # 将助手响应添加到消息历史
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
     
-    # 添加清除聊天历史的按钮
-    if st.button("Clear chat history"):
-        st.session_state.messages = []
-        st.experimental_rerun()
+    # 创建一个行来放置按钮和音频播放器
+    col1, col2, col3 = st.columns(3)
+    
+    # 清除历史按钮
+    with col1:
+        if st.button("Clear chat history"):
+            st.session_state.messages = []  # 清空消息历史
+            st.rerun()  # 重新加载页面
+    
+    # 音频生成按钮
+    with col2:
+        # 只有在有消息历史且最后一条是助手消息时才启用按钮
+        last_message = st.session_state.messages[-1] if st.session_state.messages else None
+        can_play = last_message and last_message["role"] == "assistant"
+        
+        # 生成音频按钮
+        if st.button("🔊 Generate audio", disabled=not can_play):
+            try:
+                audio_file = st.session_state.tts_engine.generate_speech(last_message["content"])
+                st.session_state.last_audio = audio_file
+                st.session_state.last_audio_text = last_message["content"]  # 保存对应的文本
+                st.rerun()
+            except Exception as e:
+                st.error(f"Failed to generate audio: {str(e)}")
+    
+    # 音频播放器
+    with col3:
+        if ("last_audio" in st.session_state and 
+            os.path.exists(st.session_state.last_audio) and 
+            st.session_state.messages and 
+            st.session_state.messages[-1]["content"] == st.session_state.last_audio_text):
+            st.audio(st.session_state.last_audio)
     
 
 if __name__ == "__main__":
-    chatbotMain()
+    chatbotMain()  # 程序入口点
