@@ -3,14 +3,13 @@ import streamlit as st
 
 def ETLsidebar():
     with st.sidebar:
-        
-        
-        # 主导航 - 添加样式
+
+        # 主导航 
         st.page_link("webMain.py", label="Home", icon="🏠")
         st.page_link("pages/chatbot.py", label="Chatbot", icon="💬")
         st.page_link("pages/rag.py", label="Knowledge Base", icon="📚")
         
-        # Tabs - 使用更醒目的样式
+        # Tabs
         education_tabs, healthCare_tabs, travelInfo_tabs, misc_tabs = st.tabs([
             "📚 Education",
             "🏥 Healthcare",

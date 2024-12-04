@@ -4,6 +4,48 @@ from packages.chatbotEngine import ChatbotEngine  # 导入自定义的聊天引�
 from packages.ttsEngine import TTSEngine  # 导入TTS引擎
 import os
 
+def functionButton():
+    # 功能按钮格式
+    col1, col2, col3, col4 = st.columns(4)  
+
+     # 录音按钮 (始终可用)
+    with col1:
+        st.button("🎤")
+        
+    # 清除历史按钮
+    with col2:
+        if len(st.session_state.messages) > 0:
+            if st.button("🗑️"):
+                st.session_state.messages = []
+                st.rerun()
+
+    # 翻译按钮
+    with col3:
+        last_message = st.session_state.messages[-1] if st.session_state.messages else None
+        if last_message and last_message["role"] == "assistant":
+            st.button("🌐")
+    
+    # 音频按钮和播放器
+    with col4:
+        last_message = st.session_state.messages[-1] if st.session_state.messages else None
+        
+        if ("last_audio" in st.session_state and 
+            os.path.exists(st.session_state.last_audio) and 
+            st.session_state.messages and 
+            st.session_state.messages[-1]["content"] == st.session_state.last_audio_text):
+            # 显示音频播放器
+            st.audio(st.session_state.last_audio)
+        elif last_message and last_message["role"] == "assistant":
+            # 显示音频生成按钮
+            if st.button("🔊"):
+                try:
+                    audio_file = st.session_state.tts_engine.generate_speech(last_message["content"])
+                    st.session_state.last_audio = audio_file
+                    st.session_state.last_audio_text = last_message["content"]
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to generate audio: {str(e)}")
+
 def chatbotMain():
     # 初始化TTS引擎
     if "tts_engine" not in st.session_state:
@@ -62,38 +104,8 @@ def chatbotMain():
             # 将助手响应添加到消息历史
             st.session_state.messages.append({"role": "assistant", "content": full_response})
     
-    # 创建一个行来放置按钮和音频播放器
-    col1, col2, col3 = st.columns(3)
-    
-    # 清除历史按钮
-    with col1:
-        if st.button("Clear chat history"):
-            st.session_state.messages = []  # 清空消息历史
-            st.rerun()  # 重新加载页面
-    
-    # 音频生成按钮
-    with col2:
-        # 只有在有消息历史且最后一条是助手消息时才启用按钮
-        last_message = st.session_state.messages[-1] if st.session_state.messages else None
-        can_play = last_message and last_message["role"] == "assistant"
-        
-        # 生成音频按钮
-        if st.button("🔊 Generate audio", disabled=not can_play):
-            try:
-                audio_file = st.session_state.tts_engine.generate_speech(last_message["content"])
-                st.session_state.last_audio = audio_file
-                st.session_state.last_audio_text = last_message["content"]  # 保存对应的文本
-                st.rerun()
-            except Exception as e:
-                st.error(f"Failed to generate audio: {str(e)}")
-    
-    # 音频播放器
-    with col3:
-        if ("last_audio" in st.session_state and 
-            os.path.exists(st.session_state.last_audio) and 
-            st.session_state.messages and 
-            st.session_state.messages[-1]["content"] == st.session_state.last_audio_text):
-            st.audio(st.session_state.last_audio)
+    # 功能按钮
+    functionButton()
     
 
 if __name__ == "__main__":
