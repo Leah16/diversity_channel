@@ -1,5 +1,5 @@
 import streamlit as st
-from packages.ETLPythonSidebar import ETLsidebar
+from packages.etlPythonSidebar import ETLsidebar
 
 st.logo("arts/dclogo.webp")
 # Page configuration

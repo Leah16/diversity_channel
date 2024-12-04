@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from packages.ragMain import RAGModule
-from packages.ETLPythonSidebar import ETLsidebar
+from packages.etlPythonSidebar import ETLsidebar
 #side bar
 ETLsidebar()
 

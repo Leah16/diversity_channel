@@ -1,7 +1,7 @@
 import streamlit as st  # 导入Streamlit库用于创建Web界面
 from typing import List, Dict  # 导入类型提示
-from packages.chatbotengine import ChatbotEngine  # 导入自定义的聊天引擎模块
-from packages.ttsengine import TTSEngine  # 导入TTS引擎
+from packages.chatbotEngine import ChatbotEngine  # 导入自定义的聊天引擎模块
+from packages.ttsEngine import TTSEngine  # 导入TTS引擎
 import os
 
 def chatbotMain():

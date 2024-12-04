@@ -1,5 +1,5 @@
 import streamlit as st
-import packages.ETLPythonSidebar as sidebar
+import packages.etlPythonSidebar as sidebar
 
 # Logo
 st.logo("arts/dclogo.webp")

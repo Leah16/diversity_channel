@@ -1,6 +1,6 @@
 # medical_care_page.py
 import streamlit as st
-import packages.ETLPythonSidebar as sidebar
+import packages.etlPythonSidebar as sidebar
 
 # Logo
 st.logo("arts/dclogo.webp")

@@ -1,6 +1,6 @@
 import streamlit as st
-import packages.ETLPythonSidebar as sidebar
-from packages.chatbotMain import chatbotMain
+import packages.etlPythonSidebar as sidebar
+from packages.chatbotWeb import chatbotMain
 
 # Logo
 st.logo("arts/dclogo.webp")
